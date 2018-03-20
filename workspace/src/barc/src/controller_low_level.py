@@ -39,9 +39,11 @@ def pwm_converter_callback(msg):
     # convert desired steering angle to degrees, saturate based on input limits
     str_ang     = max( min( 180.0/pi*msg.servo, str_ang_max), str_ang_min)
     servo_pwm   = 92.0558 + 1.8194*str_ang  - 0.0104*str_ang**2
+    #servo_pwm   = 95.5
 
     # compute motor command
     FxR         =  float(msg.motor) 
+    print('FxR',FxR)
     if FxR == 0:
         motor_pwm = 90.0
     elif FxR > 0:
@@ -56,9 +58,12 @@ def neutralize():
     servo_pwm = 90
     update_arduino()
 
+def convert2millisec(num):
+	return num*(1000/180) + 1000
+
 def update_arduino():
     global motor_pwm, servo_pwm, ecu_pub
-    ecu_cmd = ECU(motor_pwm, servo_pwm)
+    ecu_cmd = ECU(convert2millisec(motor_pwm), convert2millisec(servo_pwm))
     ecu_pub.publish(ecu_cmd)
 
 def arduino_interface():
