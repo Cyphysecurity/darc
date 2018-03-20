@@ -1,0 +1,14 @@
+Switch of the pin from the Berkeley implementation
+D8 switched within the code
+Different IMU 
+Different webcam used
+Encoders printed in black so filled in with white out 
+Some of the units are incorrect in some of the files
+Going from full throttle forward to backward doesn’t get received properly
+openLoop_straight.launch
+Line 29 → fxR_target Value changed from 0 to 90
+Controller_straight.py
+step _up → remove /50
+Controller_low_level.py
+Update_arduino()
+Added a function to convert to miliseconds in order to have the 90 value centered at 1500
