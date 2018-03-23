@@ -22,10 +22,10 @@
 * openLoop_straight.launch
     Line 29 → fxR_target Value changed from 0 to 90
 
-* Controller_straight.py
+* controller_straight.py
     step _up → remove /50
 
-* Controller_low_level.py
+* controller_low_level.py
     Update_arduino() : Added this function to convert to microseconds in order to have the 90 value centered at 1500 in the Arduino
     range.
 
