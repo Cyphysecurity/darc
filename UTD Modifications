@@ -1,32 +1,32 @@
-#UTD Modifications
+# UTD Modifications
 
-*Redefining the steering (STR) pin
+* Redefining the steering (STR) pin
     The code of the Arduino configuration was modified to properly read input signals from the vehicle's steering (STR). Previously,
     the pin was specified incorrectly in the arduino_nano328_node.ino file.
     
-*Different IMU used
+* Different IMU used
     In the UTD implementation, a Razor M0 IMU was used instead of the myAHRS+ IMU. In order to do this, the Razor M0 IMU driver was
     installed on the Odroid and the hardware references to the IMU in the code were redefined to reflect this.
     
-*Different webcam used
+* Different webcam used
     In the UTD implementation, a Logitech c920 webcam was used instead of the 
 
-*Encoders printed in black so filled in with white out 
+* Encoders printed in black so filled in with white out 
 
-*Some of the units are incorrect in some of the files
+* Some of the units are incorrect in some of the files
 
-*Going from full throttle forward to backward doesn’t get received properly
+* Going from full throttle forward to backward doesn’t get received properly
 
-*openLoop_straight.launch
+* openLoop_straight.launch
 
-*Line 29 → fxR_target Value changed from 0 to 90
+* Line 29 → fxR_target Value changed from 0 to 90
 
-*Controller_straight.py
+* Controller_straight.py
+ 
+* step _up → remove /50
 
-*step _up → remove /50
+* Controller_low_level.py
 
-*Controller_low_level.py
+* Update_arduino()
 
-*Update_arduino()
-
-*Added a function to convert to miliseconds in order to have the 90 value centered at 1500
+* Added a function to convert to miliseconds in order to have the 90 value centered at 1500
