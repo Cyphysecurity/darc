@@ -9,24 +9,27 @@
     installed on the Odroid and the hardware references to the IMU in the code were redefined to reflect this.
     
 * Different webcam used
-    In the UTD implementation, a Logitech c920 webcam was used instead of the 
+    In the UTD implementation, a Logitech c920 webcam was used instead of the ELP USB camera. The Logitech c920 camera did not use any
+    drivers, and ran with the BARC code.
 
-* Encoders printed in black so filled in with white out 
+* Encoders printed in black and filled in with white
+    BARC car printed encoders in white and filled in with black
 
-* Some of the units are incorrect in some of the files
-
-* Going from full throttle forward to backward doesn’t get received properly
-
+* Unit inconsistency
+    Some of the original code was inconsistent in its calculations. To fix this, a wrapper function was written to ensure that values
+    passed to the hardware on the car will always be in the correct units.
+    
 * openLoop_straight.launch
-
-* Line 29 → fxR_target Value changed from 0 to 90
+    Line 29 → fxR_target Value changed from 0 to 90
 
 * Controller_straight.py
- 
-* step _up → remove /50
+    step _up → remove /50
 
 * Controller_low_level.py
+    Update_arduino() : Added this function to convert to microseconds in order to have the 90 value centered at 1500 in the Arduino
+    range.
 
-* Update_arduino()
+## Unresolved Issues
 
-* Added a function to convert to miliseconds in order to have the 90 value centered at 1500
+* When running rc_manual.launch, going from full throttle forward on the controller to suddenly going backwards doesn’t get communicated
+    to hardware properly. The values are correctly read by the software, but there is no response from the hardware.
