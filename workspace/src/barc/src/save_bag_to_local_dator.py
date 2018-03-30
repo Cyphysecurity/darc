@@ -28,29 +28,38 @@ from tf import transformations
 import cv2
 import numpy as np
 
+from os import listdir
+from os.path import isfile, join
+
 rosbag_dir = os.path.expanduser("~") + '/rosbag'
 video_dir = os.path.expanduser("~") + '/video'
 image_dir = os.path.expanduser("~") + '/images'
 
 class RecordExperiment():
     def __init__(self):
-        # get parameters
-        self.experiment_name     = rospy.get_param("/record_experiment/experiment_name")
-        self.camera_on           = rospy.get_param("/record_experiment/camera_on")
+        # list all files
+        files = [f for f in listdir(rosbag_dir) if isfile(join(rosbag_dir, f))]
+        files.sort()
+        
+        for i,file in enumerate( files ):
+            print "%i - %s" % (i,file)
 
+        print "\nMake sure the data_service service.py node is running in the background"
+        idx = int( raw_input("Enter the bagfile # [integer] for the experiment you want to save to local dator :  ") )
+        bag_file = files[idx]
+        
+        print "Saving experiment : %s" % bag_file 
+        
+        # get parameters
+        self.experiment_name     = bag_file
+        self.camera_on           = False
+      
         # wait for ROS services
         rospy.wait_for_service('send_data')
-        rospy.wait_for_service('register_video')
 
         # resigter proxy service
         self.send_data = rospy.ServiceProxy('send_data', DataForward, persistent=True)
-        if self.camera_on:
-            self.start_record_video()
-            self.register_video = rospy.ServiceProxy('register_video', RegisterVideo)
-            try:
-                self.register_video(self.experiment_name, video_dir + '/%s.avi' % self.experiment_name)
-            except Exception as e:
-                pass
+
  
         # ensure data storage directories exist
         if not os.path.isdir(video_dir):
@@ -63,42 +72,12 @@ class RecordExperiment():
         # start rosrecord for following topics
         self.topics = ['/imu/data', '/encoder', '/ecu', '/ecu_pwm', '/image_transformed/compressed/', '/fix']
         self.rosbag_file_path = os.path.abspath(rosbag_dir + '/' + self.experiment_name + '.bag')
-        self.start_record_data()
         
         # upload video to local server on shutdown
-        rospy.on_shutdown( self.process_data )
-        rospy.spin()
+        self.process_data()
 
-    def start_record_data(self):
-        # construct rosbag record command 
-        command = 'rosbag record '
-        self.time = time.time()
-        for topic in self.topics:
-            command += topic + ' '
-        command += ' -O %s' % self.experiment_name
-        self.proc_bag = subprocess.Popen(command, stdin=subprocess.PIPE, shell=True, cwd=rosbag_dir)
-
-    def start_record_video(self):
-        command = 'rosrun image_view video_recorder image:=/image_raw _max_depth_range:=0 _fps:=30'
-        self.proc_vid = subprocess.Popen(command, stdin=subprocess.PIPE, shell=True, cwd=video_dir)
 
     def process_data(self):
-        # stop recording 
-        self.proc_bag.kill()
-        if self.camera_on:
-            self.proc_vid.kill()
-            time.sleep(0.5)
-            command = 'mv output.avi %s.avi' % self.experiment_name
-            subprocess.Popen(command, stdin=subprocess.PIPE, shell=True, cwd=video_dir)
-        
-        # wait for bagfile to get created
-        for i in range(100):
-            if os.path.isfile(self.rosbag_file_path):
-                break
-            time.sleep(1.0)
-        if not os.path.isfile(self.rosbag_file_path):
-            return
-
         # get bag file  
         self.bag = rosbag.Bag(self.rosbag_file_path)
 

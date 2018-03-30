@@ -1,0 +1,12 @@
+<!-- Sleiman Safaoui
+     March 23, 2018
+   -->
+
+<launch>
+
+  <node pkg="barc" type="cam_bridge.py" name="cam_bridge" output="screen">
+    <param name="cam_path" value="/dev/video6"/>
+  </node>
+
+
+</launch>
