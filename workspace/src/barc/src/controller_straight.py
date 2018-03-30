@@ -82,16 +82,15 @@ def straight(t_i, pid, time_params,FxR_target):
     # start moving
     elif (t_i < t_f):
         d_f         = pid.update(yaw_local, dt)
-        step_up     = float(t_i - t_0) * 10
+        step_up     = float(t_i - t_0) / 50.0
         FxR         = np.min([ step_up, FxR_target])
 
     # stop experiment
     else:
         d_f         = 0
         FxR         = 0
-    print('d_f',d_f)
-    #return (FxR, d_f)
-    return(FxR, 0)
+
+    return (FxR, d_f)
 
 #############################################################
 def main_auto():
@@ -100,7 +99,7 @@ def main_auto():
     # initialize ROS node
     init_node('auto_mode', anonymous=True)
     ecu_pub = Publisher('ecu', ECU, queue_size = 10)
-    se_sub = Subscriber('imu', Imu, imu_callback)
+    se_sub = Subscriber('imu/data', Imu, imu_callback)
 
 	# set node rate
     rateHz      = get_param("controller/rate") 
@@ -129,11 +128,10 @@ def main_auto():
                 pid.setPoint(yaw_local)
                 setReference    = True
                 t_i             = 0.0
-                print('yaw_local', yaw_local)
             # apply open loop command
             else:
                 (FxR, d_f)      = straight(t_i, pid, t_params, FxR_target)
-                ecu_cmd             = ECU(FxR, -d_f)
+                ecu_cmd             = ECU(FxR, d_f)
                 ecu_pub.publish(ecu_cmd)
                 t_i += dt
 	

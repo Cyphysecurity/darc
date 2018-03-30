@@ -23,59 +23,40 @@ from rospy import Rate, is_shutdown, ROSInterruptException, spin, on_shutdown
 from barc.msg import ECU
 from numpy import pi
 import rospy
+import time
 
-motor_pwm = 90
-servo_pwm = 90
-str_ang_max = 35
-str_ang_min = -35
-
-def pwm_converter_callback(msg):
-    global motor_pwm, servo_pwm, b0
-    global str_ang_max, str_ang_min
-
-    # translate from SI units in vehicle model
-    # to pwm angle units (i.e. to send command signal to actuators)
-
-    # convert desired steering angle to degrees, saturate based on input limits
-    str_ang     = max( min( 180.0/pi*msg.servo, str_ang_max), str_ang_min)
-    servo_pwm   = 92.0558 + 1.8194*str_ang  - 0.0104*str_ang**2
-
-    # compute motor command
-    FxR         =  float(msg.motor) 
-    if FxR == 0:
-        motor_pwm = 90.0
-    elif FxR > 0:
-        motor_pwm   =  FxR/b0 + 95.0
-    else:
-        motor_pwm = 90.0
-    update_arduino()
-
-def neutralize():
-    global motor_pwm
-    motor_pwm = 90
-    servo_pwm = 90
-    update_arduino()
-
-def update_arduino():
-    global motor_pwm, servo_pwm, ecu_pub
-    ecu_cmd = ECU(motor_pwm, servo_pwm)
-    ecu_pub.publish(ecu_cmd)
+motor_pwm = 1500
+servo_pwm = 1580
 
 def arduino_interface():
-    global ecu_pub, b0
+    global ecu_pub, motor_pwm, servo_pwm
 
-    # launch node, subscribe to motorPWM and servoPWM, publish ecu
     init_node('arduino_interface')
-    b0  = get_param("input_gain")
-
-    Subscriber('ecu', ECU, pwm_converter_callback, queue_size = 10)
+    # set node rate
+    loop_rate   = 50
+    dt          = 1.0 / loop_rate
+    rate        = rospy.Rate(loop_rate)
+    
+    time_prev = time.time()
     ecu_pub = Publisher('ecu_pwm', ECU, queue_size = 10)
 
-    # Set motor to neutral on shutdown
-    on_shutdown(neutralize)
+    while not rospy.is_shutdown():
+        if time.time() >= time_prev and time.time() < time_prev + 4: 
+            motor_pwm = 1580.0
+        if time.time() >= time_prev + 4 and time.time() < time_prev + 6: 
+            motor_pwm = 1620.0
+        if time.time() >= time_prev + 6 and time.time() < time_prev + 8:
+            motor_pwm = 1600.0
+        if time.time() >= time_prev + 8 and time.time() < time_prev + 10:
+            motor_pwm = 1500.0
+        if time.time() >= time_prev + 10:
+            break
 
-    # process callbacks and keep alive
-    spin()
+        ecu_cmd = ECU(motor_pwm, servo_pwm)
+        ecu_pub.publish(ecu_cmd)
+
+        # wait
+        rate.sleep()
 
 #############################################################
 if __name__ == '__main__':
