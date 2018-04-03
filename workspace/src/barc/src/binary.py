@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-#read whatever image is received from webcam.
+#read whatever image is received from webcam
 image = cv2.imread('test.png', 0)
 
 ret, thresh = cv2.threshold(image, 127,255,0)
