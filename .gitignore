@@ -69,3 +69,4 @@ workspace/src/barc/rosbag/
 
 .DS_Store
 workspace/.DS_Store
+*.icloud
