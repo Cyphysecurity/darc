@@ -21,6 +21,9 @@ class LineFollowController:
 		self.publisher.publish(ECU(0.0, angle + 90.0))
 
 def main(args):
+
+	rospy.init_node("controller_camera") #initialize ros node
+
 	LineFollowController()
 
 	rospy.spin()
