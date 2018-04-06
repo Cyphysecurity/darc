@@ -25,7 +25,7 @@ def main(args):
     rospy.init_node("controller_camera") #initialize ros node
 
     controller = LineFollowController()
-    
+
     while (1):
         self.publisher.publish(ECU(20.0, angle + 90.0))
         rospy.spin()
@@ -34,4 +34,4 @@ if __name__ == '__main__':
     try:
         main(sys.argv)
     except rospy.ROSInterruptException:
-    pass
+        pass
