@@ -18,15 +18,17 @@ class LineFollowController:
 	def callback_data(self, data):
 		# Do all computation from the incoming message to the output message here
 		(angle, displacement) = data
-		self.publisher.publish(ECU(20.0, angle + 90.0))
 
 def main(args):
-
+    global angle = 0.0
+    
 	rospy.init_node("controller_camera") #initialize ros node
 
 	controller = LineFollowController()
 
-	rospy.spin()
+	while (1):
+		self.publisher.publish(ECU(20.0, angle + 90.0))
+		rospy.spin()
 
 if __name__ == '__main__':
     try:
