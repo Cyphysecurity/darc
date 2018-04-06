@@ -27,8 +27,7 @@ def main(args):
 
     while (1):
         publisher.publish(ECU(0.0, controller.angle + 90.0))
-    
-    rospy.spin()
+        rospy.spin()
 
 if __name__ == '__main__':
     try:
