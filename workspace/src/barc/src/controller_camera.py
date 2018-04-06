@@ -12,7 +12,7 @@ class LineFollowController:
 
 		self.subscriber = rospy.Subscriber("/line/ang_disp", LineData, self.callback_data)
 
-		self.publisher = rospy.Publisher("camera_ecu", ECU, queue=10)
+		self.publisher = rospy.Publisher("ecu", ECU, queue=10)
 
 
 	def callback_data(self, data):
@@ -23,7 +23,4 @@ class LineFollowController:
 def main(args):
 	LineFollowController()
 
-	try:
-		rospy.spin()
-	except KeyboardInterrupt:
-		print("Shutting down")
+	rospy.spin()
