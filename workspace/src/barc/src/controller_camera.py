@@ -12,8 +12,6 @@ class LineFollowController:
 
         self.subscriber = rospy.Subscriber("/line/ang_disp", LineData, self.callback_data)
 
-        publisher = rospy.Publisher("ecu", ECU, queue_size=10)
-
 
     def callback_data(self, data):
         # Do all computation from the incoming message to the output message here
@@ -21,7 +19,7 @@ class LineFollowController:
 
 def main(args):
     global angle
-    global publisher
+    publisher = rospy.Publisher("ecu", ECU, queue_size=10)
     
     rospy.init_node("controller_camera") #initialize ros node
 
@@ -29,7 +27,8 @@ def main(args):
 
     while (1):
         publisher.publish(ECU(20.0, angle + 90.0))
-        rospy.spin()
+    
+    rospy.spin()
 
 if __name__ == '__main__':
     try:
