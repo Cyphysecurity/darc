@@ -16,7 +16,7 @@ class LineFollowController:
 
     def callback_data(self, data):
         # Do all computation from the incoming message to the output message here
-        (self.angle, displacement) = data
+        self.angle = data.angle
         self.publisher.publish(ECU(0.0, self.angle + 90.0))
 
 def main(args):    
