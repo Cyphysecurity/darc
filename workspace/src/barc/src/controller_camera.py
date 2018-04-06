@@ -24,3 +24,9 @@ def main(args):
 	LineFollowController()
 
 	rospy.spin()
+
+if __name__ == '__main__':
+    try:
+        main(sys.argv)
+    except rospy.ROSInterruptException:
+	pass
