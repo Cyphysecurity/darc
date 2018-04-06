@@ -12,7 +12,7 @@ class LineFollowController:
 
 		self.subscriber = rospy.Subscriber("/line/ang_disp", LineData, self.callback_data)
 
-		self.publisher = rospy.Publisher("ecu", ECU, queue=10)
+		self.publisher = rospy.Publisher("ecu", ECU)
 
 
 	def callback_data(self, data):
