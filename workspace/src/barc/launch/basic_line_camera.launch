@@ -37,6 +37,9 @@
         <param name="cam_path" value="/dev/video6"/>
     </node>
 
+    <!-- TOP DOWN -->
+    <node pkg="barc" type="top_down_view.py" name="top_down_view" output="screen" />
+
 	<!-- HIGH LEVEL CONTROLLER -->
 	<node pkg="barc" type="controller_camera.py" name="controller" output="screen">
          <!-- PROPERTIES -->
