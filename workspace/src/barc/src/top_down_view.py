@@ -21,7 +21,7 @@ def image_callback(msg):
         # Save your OpenCV2 image as a jpeg 
         cv2.imwrite('camera_image.jpeg', cv2_img)
          # Get image and resize it #TODO: replace it with subscribing to node that publishes images
-	img = cv2_img
+	img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
 	img = cv2.resize(img, (640, 480))
 
 
