@@ -26,7 +26,7 @@ def main(args):
     controller = LineFollowController()
 
     while (1):
-        publisher.publish(ECU(20.0, controller.angle + 90.0))
+        publisher.publish(ECU(0.0, controller.angle + 90.0))
     
     rospy.spin()
 
