@@ -22,7 +22,7 @@ class LineFollowController:
 def main(args):
     global angle
     
-	rospy.init_node("controller_camera") #initialize ros node
+    rospy.init_node("controller_camera") #initialize ros node
 
 	controller = LineFollowController()
 
