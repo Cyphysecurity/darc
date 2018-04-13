@@ -13,10 +13,14 @@ from barc.msg import LineData
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from get_rect import *
+import time 
 
 Lm = rospy.get_param("/top_down_view/board_length")
 Wm = rospy.get_param("/top_down_view/board_width")
 board_offset = rospy.get_param("/top_down_view/board_offset")
+
+r = []
+
 
 
 class ImagePublisher:
@@ -53,11 +57,12 @@ def image_callback(msg):
     # From here until the usage of warpAffine, the code is copied from https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
 
     # Four points of a rectangle in the world plane
-	r = []
-	while (r == []):
-    	r = get_rect(img)
-    	print('Please place the board in the field of view')
-
+    global r
+    while (r == []):
+        r = get_rect(img)
+        print('Please place the board in the field of view')
+        time.sleep(1)
+    print(r)
     rect = np.zeros((4, 2), dtype = "float32")
     rect[0] = [r[0][0][0],r[0][0][1]] #top left 		.-------->X
     rect[1] = [r[1][0][0],r[1][0][1]] #top right		|  3    2
@@ -151,7 +156,7 @@ def image_callback(msg):
     Ryp = Wp
     xdp = Cxp - Rxp # x offset between R and C in pixles
     ydp = - (Cyp - Ryp) # y offset between R and C in pixles flipped 
-	LP2M = Lm/Lp # ratio between meters and pixels along length of board
+    LP2M = Lm/Lp # ratio between meters and pixels along length of board
     WP2M = Wm/Wp # ratio between meters and pixels along width of board
     xdm = LP2M*xdp
     ydm = WP2M*ydp
@@ -185,6 +190,7 @@ def image_callback(msg):
     ip.pub_imgs(line_img, img_contours)
 
 def main():
+
     rospy.init_node('image_listener')
 
     global publisher
@@ -203,6 +209,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
 
 
 
