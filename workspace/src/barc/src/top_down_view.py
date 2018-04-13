@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-We use the camera calibration parameters to produce a top-down view image from the camera image
+We use the camera and a rectangular board to produce a top-down view image from the camera image
 '''
 
 import numpy as np
@@ -56,6 +56,7 @@ def image_callback(msg):
 	r = []
 	while (r == []):
     	r = get_rect(img)
+    	print('Please place the board in the field of view')
 
     rect = np.zeros((4, 2), dtype = "float32")
     rect[0] = [r[0][0][0],r[0][0][1]] #top left 		.-------->X
