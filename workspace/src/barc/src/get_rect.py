@@ -7,18 +7,20 @@ for more details see:
 
 import numpy as np
 import cv2
+import time
 
 def get_rect(img):
     #img = cv2.imread('rect.jpg',0)
-    img = cv2.resize(img, (640/2, 480/2))
+    img = cv2.resize(img, (640, 480))
     #cv2.imshow('img',img)
 
     blur = cv2.blur(img,(3,3)) # blur image
-    edged = cv2.Canny(blur, 150, 200)
+    edged = cv2.Canny(blur, 0, 250)
 
-    #cv2.imshow('edged',edged)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
+    cv2.imshow('edged',edged)
+    cv2.waitKey(3)
+    time.sleep(3)
+    cv2.destroyAllWindows()
 
     _, cnts, _ = cv2.findContours(edged.copy(),cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
