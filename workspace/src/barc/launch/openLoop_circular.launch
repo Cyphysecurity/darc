@@ -35,8 +35,8 @@
 	<!-- HIGH LEVEL CONTROLLER -->
 	<node pkg="barc" type="controller_circular.py" name="controller" output="screen">
          <!-- PROPERTIES -->
-        <param name="FxR_target" type="double" value="15" />
-        <param name="d_f_target" type="double" value="30" />
+        <param name="FxR_target" type="double" value="8" />
+        <param name="d_f_target" type="double" value="45" />
         <param name="t_0" type="int" value="2" />
 		<param name="t_f" type="int" value="10" />
 

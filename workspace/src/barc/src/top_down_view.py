@@ -26,8 +26,8 @@ r = []
 class ImagePublisher:
     def __init__(self):
         self.bridge = CvBridge()
-        self.pub_recon = rospy.Publisher("/cam/recon", Image, queue_size=10)
-        self.pub_bw = rospy.Publisher("/cam/bw", Image, queue_size=10)
+        self.pub_recon = rospy.Publisher("/cam/recon", Image, queue_size=1)
+        self.pub_bw = rospy.Publisher("/cam/bw", Image, queue_size=1)
 
     def pub_imgs(self, img_recon, img_bw):
         try:
@@ -127,7 +127,10 @@ def image_callback(msg):
     y = y - np.mean(y)
     coords = np.vstack([x, y])
     cov = np.cov(coords) # covarience matrix
-    evals, evecs = np.linalg.eig(cov) # eigenvalues and eigenvectors of the covarience matrix
+    try:
+        evals, evecs = np.linalg.eig(cov) # eigenvalues and eigenvectors of the covarience matrix
+    except:
+        return
     sort_indices = np.argsort(evals)[::-1] #sort eigenvalues in decreasing order
     x_v1, y_v1 = evecs[:, sort_indices[0]]  # Eigenvector with largest eigenvalue
     ang = math.atan2(y_v1, x_v1)
