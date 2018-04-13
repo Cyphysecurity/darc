@@ -1,2 +1,3 @@
 float32 angle 
-float32 displacement
+float32 horizontal_displacement
+float32 vertical_displacement
