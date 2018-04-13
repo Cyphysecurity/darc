@@ -12,6 +12,12 @@ from sensor_msgs.msg import Image
 from barc.msg import LineData
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
+from get_rect import *
+
+Lm = rospy.get_param("/top_down_view/board_length")
+Wm = rospy.get_param("/top_down_view/board_width")
+board_offset = rospy.get_param("/top_down_view/board_offset")
+
 
 class ImagePublisher:
     def __init__(self):
@@ -40,23 +46,23 @@ def image_callback(msg):
 
 
 	img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
-    img = cv2.resize(img, (640, 480))
+    #img = cv2.resize(img, (640, 480))
 
-    cv2.imwrite('blackwhite.jpeg', img)
+    #cv2.imwrite('blackwhite.jpeg', img)
 
+    # From here until the usage of warpAffine, the code is copied from https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
 
-    # Four points of a rectangle in the world plane #TODO: this is heuristic, but will work for now
-    # you may have to play around with the points
-    # Also from here until the usage of warpAffine, the code is copied from https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+    # Four points of a rectangle in the world plane
+	r = []
+	while (r == []):
+    	r = get_rect(img)
+
     rect = np.zeros((4, 2), dtype = "float32")
-    rect[0] = [211,435] #top left
-    rect[1] = [405,435] #top right
-    rect[2] = [380,335] #bottom right
-    rect[3] = [240,335] #bottom left
-    #rect[0] = [191,435] #top left
-    #rect[1] = [425,435] #top right
-    #rect[2] = [380,335] #bottom right
-    #rect[3] = [240,335] #bottom left
+    rect[0] = [r[0][0][0],r[0][0][1]] #top left 		.-------->X
+    rect[1] = [r[1][0][0],r[1][0][1]] #top right		|  3    2
+    rect[2] = [r[2][0][0],r[2][0][1]] #bottom right		|  0    1
+    rect[3] = [r[3][0][0],r[3][0][1]] #bottom left		Y
+    
     (tl, tr, br, bl) = rect
     # compute the width of the new image, which will be the
     # maximum distance between bottom-right and bottom-left
@@ -96,7 +102,8 @@ def image_callback(msg):
     # note: remember that the reference frame of the image starts at the top-left corner. x points right, y points down
 
     # Image processing
-    line_img = cv2.resize(flipped, (0,0), fx = 0.5, fy = 0.5) # resize image for faster processing
+    #line_img = cv2.resize(flipped, (0,0), fx = 0.5, fy = 0.5) # resize image for faster processing
+    line_img = flipped
     #cv2.imshow('line_img', line_img)
     # now we have a correctly oriented image
     blur = cv2.blur(line_img,(3,3)) # blur image
@@ -107,7 +114,6 @@ def image_callback(msg):
     bw_erode = cv2.erode(bw, kernel, iterations = 1) # erode again
     #cv2.imshow('bw_erode', bw_erode)
     # now we have a good binary image --> find orientation of segment of line
-    img_contours = bw_erode
     
     # find orientation using eigenvectors (copied from: https://alyssaq.github.io/2015/computing-the-axes-or-orientation-of-a-blob/)
     y, x = np.nonzero(bw_erode)
@@ -125,10 +131,43 @@ def image_callback(msg):
     angd = ang/math.pi * 180
 
     # display the data and print results
-    scale = 10
+    #scale = 10
+    Wp, Lp = bw_erode.shape
     y, x = np.nonzero(bw_erode)
-    pt1 = (int(np.mean(x)), int(np.mean(y))) #start point (center)
-    pt2 = (int(np.mean(x)-x_v1*scale), int(np.mean(y)-y_v1*scale)) #end point (center - scale*eigenvector)
+    # center of blob in top-down-view image
+    mean_x = np.mean(x)
+    mean_y = np.mean(y)
+    # mapping between 
+    # position of center of blob in meters relative to the median of the side of the board closer to the car
+    #       .------> Xw ------------- |     
+	# 		|						  |
+	#	    V				  C		  |           C: center of blob in 
+	#	   Yw 						  |
+	# 		|    					  |
+    #		|------------R------------| 		  R: media of side close to car
+	#
+	#		       O----V----O 					  CAR
+    Cxp = mean_x
+    Cyp = mean_y
+    Rxp = Lp/2
+    Ryp = Wp
+    xdp = Cxp - Rxp # x offset between R and C in pixles
+    ydp = - (Cyp - Ryp) # y offset between R and C in pixles flipped 
+	LP2M = Lm/Lp # ratio between meters and pixels along length of board
+    WP2M = Wm/Wp # ratio between meters and pixels along width of board
+    xdm = LP2M*xdp
+    ydm = WP2M*ydp
+
+    # position of center of blob in meters relative to the camera 
+	#				YB
+	#				^
+	#				|					The Car body frame
+	#          O----V----O---> XB  
+    Cxm = xdm
+    Cym = board_offset + ydm 
+
+    #pt1 = (int(mean_x), int(mean_y)) #start point (center)
+    #pt2 = (int(mean_x-x_v1*scale), int(mean_y-y_v1*scale)) #end point (center - scale*eigenvector)
     #print ('xi',int(np.mean(x)))
     #print ('yi',int(np.mean(y)))
     #print('xf',int(np.mean(x)-x_v1*scale))
@@ -136,9 +175,9 @@ def image_callback(msg):
     #print ('eigenvector x,y pari: ',x_v1,y_v1)
     #print('degree in radian: ', ang)
     #print('degree in degrees: ', angd)
-    cv2.arrowedLine(img_contours, pt1, pt2, (155,0,0), 1)
+    #cv2.arrowedLine(img_contours, pt1, pt2, (155,0,0), 1)
     #cv2.imshow('img_contours', img_contours)
-    publisher.publish(LineData(angd, 0.0))
+    publisher.publish(LineData(angd, Cxm. Cym))
     ip = ImagePublisher()
 
     #close all windows when keyboard key is pressed on image window

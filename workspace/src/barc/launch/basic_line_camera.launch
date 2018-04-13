@@ -36,9 +36,16 @@
     <node pkg="barc" type="cam_bridge.py" name="cam_bridge" output="screen">
         <param name="cam_path" value="/dev/video6"/>
     </node>
+	
+	<!-- MODIFYING CAM PARAM -->
+	<node pkg="barc" type="modify_cam_param.py" name="modify_cam_param" />
 
     <!-- TOP DOWN -->
-    <node pkg="barc" type="top_down_view.py" name="top_down_view" output="screen" />
+    <node pkg="barc" type="top_down_view.py" name="top_down_view" output="screen">
+		<param name="board_length"  value="" /> <!-- in meters-->
+		<param name="board_width"   value="" /> <!-- in meters-->
+    	<param name="board_offset"  value="" /> <!-- in meters-->
+	</node>
 
 	<!-- HIGH LEVEL CONTROLLER -->
 	<node pkg="barc" type="controller_camera.py" name="controller" output="screen">
