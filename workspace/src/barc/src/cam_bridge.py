@@ -28,7 +28,7 @@ class ImagePublisher:
     def __init__(self):
         self.bridge = CvBridge()
         self.keep_running = True
-        self.cam_pub = rospy.Publisher("/cam/raw", Image, queue_size=10)
+        self.cam_pub = rospy.Publisher("/cam/raw", Image, queue_size=1)
 
     def get_rgb(self, cam):
         ret, self.cam_image = cam.read() #fetch image
