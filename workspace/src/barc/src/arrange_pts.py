@@ -52,6 +52,7 @@ def select_checkerboard_points(corners, cols, rows):
     ordered_pts[2] = corners[0][cols-1][0]
     ordered_pts[1] = corners[0][cols*rows-1][0]
     ordered_pts[0] = corners[0][cols*(rows-1)][0]
+    ordered_pts = arrange_rect_pts(ordered_pts)
     return(ordered_pts)
 
 

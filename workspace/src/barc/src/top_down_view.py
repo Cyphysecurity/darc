@@ -42,7 +42,7 @@ class ImagePublisher:
 
 def image_callback(msg):
     t00 = time.clock()
-    print("Received an image!")
+    #print("Received an image!")
     bridge = CvBridge()
     try:
         # Convert your ROS Image message to OpenCV2
@@ -57,13 +57,13 @@ def image_callback(msg):
 
     # find outer four corners of checkboard
     global board_corners
-    print(board_corners)
+    #print(board_corners)
     if (board_corners == []): #TODO: fix this. Checkerboard detection does not work if first iteration fails
         board_corners = get_checkerboard_corners(img, num_corners_cols,num_corners_rows)
         print('Please place the board in the field of view')
         time.sleep(3)
         return
-    print(board_corners)
+    #print(board_corners)
     rect = np.zeros((4, 2), dtype = "float32")
     rect = select_checkerboard_points(board_corners, num_corners_cols, num_corners_rows) # select 
     # the selected points are ordered based on the diagram below:
@@ -72,7 +72,7 @@ def image_callback(msg):
     #   |  0    1
     # 	Y
 
-    print('Got rectangle')
+    #print('Got rectangle')
     (tl, tr, br, bl) = rect
     # compute the width of the new image, which will be the
     # maximum distance between bottom-right and bottom-left
@@ -101,18 +101,18 @@ def image_callback(msg):
     # compute the perspective transform matrix and then apply it
     t0 = time.clock()
     M = cv2.getPerspectiveTransform(rect, dst)
-    print('Got perspective transform in ', time.clock()-t0)
+    #print('Got perspective transform in ', time.clock()-t0)
     t1 = time.clock()
     warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
-    print('Got warped image in ', time.clock()-t1)
+    #print('Got warped image in ', time.clock()-t1)
     # the obtained image is rotated 180 degrees and flipped along y axis --> unflip it
     rows,cols = warped.shape
     M = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
     dst = cv2.warpAffine(warped,M,(cols,rows))
     line_img = dst;
     line_img = cv2.flip(dst, 1)
-    print('Got flipped image')
-    print('Done with image reconstruction ',time.clock() - t0)
+    #print('Got flipped image')
+    #print('Done with image reconstruction ',time.clock() - t0)
     
     # Image processing
     # now we have a correctly oriented image
@@ -131,17 +131,17 @@ def image_callback(msg):
     y = y - np.mean(y)
     coords = np.vstack([x, y])
     cov = np.cov(coords) # covarience matrix
-    print('found cov')
+    #print('found cov')
     try:
         evals, evecs = np.linalg.eig(cov) # eigenvalues and eigenvectors of the covarience matrix
     except:
         return
-    print('found eign')
+    #print('found eign')
     sort_indices = np.argsort(evals)[::-1] #sort eigenvalues in decreasing order
     x_v1, y_v1 = evecs[:, sort_indices[0]]  # Eigenvector with largest eigenvalue
     ang = math.atan2(y_v1, x_v1)
     angd = ang/math.pi * 180
-    print('found roation of line')
+    #print('found roation of line')
     # display the data and print results
     scale = 50
     Wp, Lp = bw_erode.shape
@@ -189,18 +189,18 @@ def image_callback(msg):
     #print('degree in degrees: ', angd)
     dir_img = img
     cv2.arrowedLine(line_img, pt1, pt2, (155,155,155), 2)
-    print('got all the data in ', time.clock() - t0)
+    #print('got all the data in ', time.clock() - t0)
     #cv2.imshow('dir_img', dir_img)
     publisher.publish(LineData(angd, Cxm, Cym))
-    print('published info')
+    #print('published info')
     ip = ImagePublisher()
     #close all windows when keyboard key is pressed on image window
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     ip.pub_imgs(line_img, dir_img)
-    print('published image')
-    print('processed image and published data in ', time.clock()-t0)
-    print('callback took ', time.clock() - t00)
+    #print('published image')
+    #print('processed image and published data in ', time.clock()-t0)
+    #print('callback took ', time.clock() - t00)
 
 
 def main():
@@ -210,7 +210,7 @@ def main():
     global publisher
 
 
-    publisher = rospy.Publisher("/line/ang_disp", LineData, queue_size=10)
+    publisher = rospy.Publisher("/line/ang_disp", LineData, queue_size=1)
 
     # Define your image topic
     image_topic = "/cam/raw"
