@@ -42,9 +42,11 @@
 
     <!-- TOP DOWN -->
     <node pkg="barc" type="top_down_view.py" name="top_down_view" output="screen">
-		<param name="board_length"  value="" /> <!-- in meters-->
-		<param name="board_width"   value="" /> <!-- in meters-->
-    	<param name="board_offset"  value="" /> <!-- in meters-->
+		<param name="board_length"  value="0.432" /> <!-- in meters-->
+		<param name="board_width"   value="0.219" /> <!-- in meters-->
+    	<param name="board_offset"  value="0.321" /> <!-- in meters-->
+		<param name="num_corners_cols" value="7" /> <!--internal corners horizontally--> 
+		<param name="num_corners_rows" value="5" /> <!--internal corners vertically-->
 	</node>
 
 	<!-- HIGH LEVEL CONTROLLER -->

@@ -24,10 +24,11 @@ from barc.msg import ECU
 from numpy import pi
 import rospy
 
-motor_pwm = 90
-servo_pwm = 90
-str_ang_max = 35
-str_ang_min = -35
+motor_pwm = 90			#Zero values for motor (no movement)
+servo_pwm = 90			#Zero values for servo (stearing straight)
+str_ang_max = 180		#Value for turning all the way right
+str_ang_min = 0			#Value for turning all the way left
+offset = 13.3			#how many degreese off from stright stright is in degreese
 
 def pwm_converter_callback(msg):
     global motor_pwm, servo_pwm, b0
@@ -37,9 +38,8 @@ def pwm_converter_callback(msg):
     # to pwm angle units (i.e. to send command signal to actuators)
 
     # convert desired steering angle to degrees, saturate based on input limits
-    str_ang     = max( min( 180.0/pi*msg.servo, str_ang_max), str_ang_min)
-    servo_pwm   = 92.0558 + 1.8194*str_ang  - 0.0104*str_ang**2
-    #servo_pwm   = 95.5
+	
+    servo_pwm    = max( min( offset+(180.0/pi*msg.servo), str_ang_max), str_ang_min)
 
     # compute motor command
     FxR         =  float(msg.motor) 
@@ -73,8 +73,8 @@ def arduino_interface():
     init_node('arduino_interface')
     b0  = get_param("input_gain")
 
-    Subscriber('ecu', ECU, pwm_converter_callback, queue_size = 10)
-    ecu_pub = Publisher('ecu_pwm', ECU, queue_size = 10)
+    Subscriber('ecu', ECU, pwm_converter_callback, queue_size = 1)
+    ecu_pub = Publisher('ecu_pwm', ECU, queue_size = 1)
 
     # Set motor to neutral on shutdown
     on_shutdown(neutralize)
