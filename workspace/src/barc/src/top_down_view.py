@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 '''
 We use the camera and a rectangular board to produce a top-down view image from the camera image
+we use parts of code from:
+https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
+https://alyssaq.github.io/2015/computing-the-axes-or-orientation-of-a-blob/)
 '''
 
 import numpy as np
@@ -14,14 +17,15 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image
 from get_rect import *
 import time 
+from arrange_pts import *
 
 Lm = rospy.get_param("/top_down_view/board_length")
 Wm = rospy.get_param("/top_down_view/board_width")
 board_offset = rospy.get_param("/top_down_view/board_offset")
+num_corners_cols = rospy.get_param("top_down_view/num_corners_cols") 
+num_corners_rows = rospy.get_param("top_down_view/num_corners_rows")
 
-r = []
-
-
+board_corners = []
 
 class ImagePublisher:
     def __init__(self):
@@ -37,6 +41,7 @@ class ImagePublisher:
             print(e)
 
 def image_callback(msg):
+    t00 = time.clock()
     print("Received an image!")
     bridge = CvBridge()
     try:
@@ -48,31 +53,26 @@ def image_callback(msg):
         # Save your OpenCV2 image as a jpeg 
         cv2.imwrite('camera_image.jpeg', cv2_img)
 
-
 	img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
-    #img = cv2.resize(img, (640, 480))
 
-    #cv2.imwrite('blackwhite.jpeg', img)
-
-    # From here until the usage of warpAffine, the code is copied from https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
-
-    # Four points of a rectangle in the world plane
-    global r
-    while (r == []):
-        r = get_rect(img)
+    # find outer four corners of checkboard
+    global board_corners
+    print(board_corners)
+    if (board_corners == []): #TODO: fix this. Checkerboard detection does not work if first iteration fails
+        board_corners = get_checkerboard_corners(img, num_corners_cols,num_corners_rows)
         print('Please place the board in the field of view')
-        time.sleep(1)
-    print(r)
+        time.sleep(3)
+        return
+    print(board_corners)
     rect = np.zeros((4, 2), dtype = "float32")
-    #rect[0] = [1, 479]
-    #rect[1] = [639, 479]
-    #rect[2] = [639, 1]
-    #rect[3] = [1, 1]
-    rect[0] = [r[0][0][0],r[0][0][1]] #top left 		.-------->X
-    rect[1] = [r[1][0][0],r[1][0][1]] #top right		|  3    2
-    rect[2] = [r[2][0][0],r[2][0][1]] #bottom right		|  0    1
-    rect[3] = [r[3][0][0],r[3][0][1]] #bottom left		Y
-    print('1')
+    rect = select_checkerboard_points(board_corners, num_corners_cols, num_corners_rows) # select 
+    # the selected points are ordered based on the diagram below:
+    #   .-------->X
+    #   |  3    2
+    #   |  0    1
+    # 	Y
+
+    print('Got rectangle')
     (tl, tr, br, bl) = rect
     # compute the width of the new image, which will be the
     # maximum distance between bottom-right and bottom-left
@@ -87,7 +87,6 @@ def image_callback(msg):
     heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
     heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
     maxHeight = max(int(heightA), int(heightB))
-    print('2')
     # now that we have the dimensions of the new image, construct
     # the set of destination points to obtain a "birds eye view",
     # (i.e. top-down view) of the image, again specifying points
@@ -100,26 +99,24 @@ def image_callback(msg):
         [0, maxHeight - 1]], dtype = "float32")
 
     # compute the perspective transform matrix and then apply it
+    t0 = time.clock()
     M = cv2.getPerspectiveTransform(rect, dst)
+    print('Got perspective transform in ', time.clock()-t0)
+    t1 = time.clock()
     warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
-    print('3')
+    print('Got warped image in ', time.clock()-t1)
     # the obtained image is rotated 180 degrees and flipped along y axis --> unflip it
     rows,cols = warped.shape
     M = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
     dst = cv2.warpAffine(warped,M,(cols,rows))
-    flipped = dst;
-    flipped = cv2.flip(dst, 1)
-    print('4')
-    #ip = ImagePublisher()
-    #ip.pub_imgs(flipped, flipped)
-    #print('4.5')
-    # note: remember that the reference frame of the image starts at the top-left corner. x points right, y points down
-
+    line_img = dst;
+    line_img = cv2.flip(dst, 1)
+    print('Got flipped image')
+    print('Done with image reconstruction ',time.clock() - t0)
+    
     # Image processing
-    #line_img = cv2.resize(flipped, (0,0), fx = 0.5, fy = 0.5) # resize image for faster processing
-    line_img = flipped
-
     # now we have a correctly oriented image
+    t0 = time.clock()
     blur = cv2.blur(line_img,(3,3)) # blur image
     kernel = np.ones((3,3), np.uint8) # kernel for erosion
     erosion = cv2.erode(blur, kernel, iterations = 1) # erode to remove white noise
@@ -128,24 +125,23 @@ def image_callback(msg):
     bw_erode = cv2.erode(bw, kernel, iterations = 1) # erode again
     #cv2.imshow('bw_erode', bw_erode)
     # now we have a good binary image --> find orientation of segment of line
-    print('5')
-    # find orientation using eigenvectors (copied from: https://alyssaq.github.io/2015/computing-the-axes-or-orientation-of-a-blob/)
+    # find orientation using eigenvectors
     y, x = np.nonzero(bw_erode)
     x = x - np.mean(x)
     y = y - np.mean(y)
     coords = np.vstack([x, y])
     cov = np.cov(coords) # covarience matrix
-    print('6')
+    print('found cov')
     try:
         evals, evecs = np.linalg.eig(cov) # eigenvalues and eigenvectors of the covarience matrix
     except:
         return
-    print('7')
+    print('found eign')
     sort_indices = np.argsort(evals)[::-1] #sort eigenvalues in decreasing order
     x_v1, y_v1 = evecs[:, sort_indices[0]]  # Eigenvector with largest eigenvalue
     ang = math.atan2(y_v1, x_v1)
     angd = ang/math.pi * 180
-    print('8')
+    print('found roation of line')
     # display the data and print results
     scale = 50
     Wp, Lp = bw_erode.shape
@@ -153,7 +149,7 @@ def image_callback(msg):
     # center of blob in top-down-view image
     mean_x = np.mean(x)
     mean_y = np.mean(y)
-    print('9')
+
     # mapping between 
     # position of center of blob in meters relative to the median of the side of the board closer to the car
     #       .------> Xw ------------- |     
@@ -182,7 +178,6 @@ def image_callback(msg):
 	#          O----V----O---> XB  
     Cxm = xdm
     Cym = board_offset + ydm 
-    print('10')
     pt1 = (int(mean_x), int(mean_y)) #start point (center)
     pt2 = (int(mean_x-x_v1*scale), int(mean_y-y_v1*scale)) #end point (center - scale*eigenvector)
     #print ('xi',int(np.mean(x)))
@@ -194,21 +189,26 @@ def image_callback(msg):
     #print('degree in degrees: ', angd)
     dir_img = img
     cv2.arrowedLine(line_img, pt1, pt2, (155,155,155), 2)
+    print('got all the data in ', time.clock() - t0)
     #cv2.imshow('dir_img', dir_img)
     publisher.publish(LineData(angd, Cxm, Cym))
-    print('11')
+    print('published info')
     ip = ImagePublisher()
-    print('12')
     #close all windows when keyboard key is pressed on image window
     #cv2.waitKey(0)
     #cv2.destroyAllWindows()
     ip.pub_imgs(line_img, dir_img)
-    print('13')
+    print('published image')
+    print('processed image and published data in ', time.clock()-t0)
+    print('callback took ', time.clock() - t00)
+
+
 def main():
 
     rospy.init_node('image_listener')
 
     global publisher
+
 
     publisher = rospy.Publisher("/line/ang_disp", LineData, queue_size=10)
 
@@ -217,8 +217,6 @@ def main():
     # Set up your subscriber and define its callback
     rospy.Subscriber(image_topic, Image, image_callback)
     
-   
-
     # Spin until ctrl + c
     rospy.spin()
 
